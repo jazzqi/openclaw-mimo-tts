@@ -51,10 +51,16 @@ clawhub install xiaomi-mimo-tts
 
 ## 配置
 
-设置环境变量：
+推荐使用官方环境变量名（优先）：
 
 ```bash
 export XIAOMI_API_KEY=your-api-key
+```
+
+为兼容历史配置，也支持旧名：
+
+```bash
+export MIMO_API_KEY=your-api-key  # 仍被接受，脚本会优先使用 XIAOMI_API_KEY
 ```
 
 获取 API Key: https://platform.xiaomimimo.com/
