@@ -90,9 +90,18 @@ description: |
 | 中文女声 | `default_zh` |
 | 英文女声 | `default_eh` |
 
-## 🤖 智能版本 (mimo_tts_smart.js)
+## 🤖 智能版本 (多语言支持)
 
-我们提供了一个智能脚本，可以自动分析文本内容并选择合适的风格：
+我们提供了多种智能脚本实现，可以自动分析文本内容并选择合适的风格：
+
+### 🎯 实现支持
+
+| 版本 | 文件 | 特点 |
+|------|------|------|
+| **统一入口** | `mimo-tts-smart.sh` | 自动选择最佳实现，优先NodeJS→Python→Shell |
+| **NodeJS 版** | `mimo_tts_smart.js` | 功能最完善，智能分析最准确 |
+| **Python 版** | `mimo_tts_smart.py` | 功能完整，备用方案 |
+| **Shell 版** | `mimo_tts_smart.sh` | 简化版，兼容性好 |
 
 ### 功能特点
 
@@ -105,30 +114,42 @@ description: |
 ### 使用方式
 
 ```bash
-# 智能版 - 自动分析
+# 推荐：使用统一入口（自动选择最佳实现）
+~/.openclaw/skills/xiaomi-mimo-tts/scripts/mimo-tts-smart.sh "文本内容" [输出文件]
+
+# 直接调用 NodeJS 版本（功能最完善）
 node ~/.openclaw/skills/xiaomi-mimo-tts/scripts/mimo_tts_smart.js "文本内容" [输出文件]
 
+# 直接调用 Python 版本
+python3 ~/.openclaw/skills/xiaomi-mimo-tts/scripts/mimo_tts_smart.py "文本内容" [输出文件]
+
+# 直接调用 Shell 版本（简化版）
+~/.openclaw/skills/xiaomi-mimo-tts/scripts/mimo_tts_smart.sh "文本内容" [输出文件]
+
 # 示例
-node scripts/mimo_tts_smart.js "宝宝晚安，爱你哦～" output.ogg
+mimo-tts-smart.sh "宝宝晚安，爱你哦～" output.ogg
 # 会自动添加 <style>温柔</style> 标签
 
-node scripts/mimo_tts_smart.js "唱首歌给我听吧" output.ogg
+mimo-tts-smart.sh "唱首歌给我听吧" output.ogg
 # 会自动添加 <style>唱歌</style> 标签
+
+mimo-tts-smart.sh "老铁，咋整啊？" output.ogg
+# 会自动添加 <style>东北话</style> 标签
 ```
 
 ### Agent 使用建议
 
-Agent 可以直接调用智能版脚本，无需手动判断风格：
+**强烈推荐使用 `mimo-tts-smart.sh`**，它会：
+1. 自动检测系统环境（NodeJS/Python/Shell 可用性）
+2. 自动选择最佳实现版本
+3. 提供更好的错误处理和输出反馈
+4. 保证最大兼容性
 
-```bash
-# 使用智能版（推荐）
-~/.openclaw/skills/xiaomi-mimo-tts/scripts/mimo-tts-smart.sh "$TEXT" "$OUTPUT_FILE"
-
-# 或直接调用 Node 版本
-~/.openclaw/skills/xiaomi-mimo-tts/scripts/mimo_tts_smart.js "$TEXT" "$OUTPUT_FILE"
-```
-
-**推荐使用 `mimo-tts-smart.sh`**，因为它有更好的错误处理和输出反馈。
+脚本会自动分析：
+1. 根据情感关键词选择相应风格
+2. 根据方言特征选择方言
+3. 根据内容类型调整语速和效果
+4. 诗词内容自动使用温柔风格
 
 脚本会自动分析：
 1. 根据情感关键词选择相应风格
