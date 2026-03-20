@@ -2,15 +2,36 @@
 
 小米 MiMo TTS 语音合成 OpenClaw Skill。
 
-## ✨ 核心亮点：智能风格检测
+## ✨ 核心亮点：多语言智能版本支持
 
-**自动分析文本，智能选择最合适的情感、方言、语速！**
+**自动分析文本，智能选择最合适的情感、方言、语速，多语言实现支持！**
+
+### 🎯 智能版本支持
+
+| 版本 | 文件 | 特点 | 推荐度 |
+|------|------|------|--------|
+| **统一入口** | `mimo-tts-smart.sh` | 自动选择最佳实现 | ★★★★★ |
+| **NodeJS 版** | `mimo_tts_smart.js` | 功能最完善 | ★★★★★ |
+| **Python 版** | `mimo_tts_smart.py` | 功能完整，备用方案 | ★★★★☆ |
+| **Shell 版** | `mimo_tts_smart.sh` | 简化版，兼容性好 | ★★★☆☆ |
 
 ```bash
-# 智能版自动检测（推荐）
+# 推荐：统一入口（自动选择最佳实现）
+scripts/mimo-tts-smart.sh "今天太开心了，哈哈！" output.ogg
+
+# 直接调用 NodeJS 版（功能最完整）
 node scripts/mimo_tts_smart.js "今天太开心了，哈哈！" output.ogg
 # 输出: 📊 检测结果: 情感: happy
 #       🏷️ 风格: <style>开心</style>
+
+# Python 版
+python3 scripts/mimo_tts_smart.py "宝宝晚安，爱你哦～" output.ogg
+# 输出: 📊 检测结果: 情感: gentle
+#       🏷️ 风格: <style>温柔</style>
+
+# Shell 简化版
+scripts/mimo_tts_smart.sh "老铁，咋整啊？" output.ogg
+# 输出: 🏷️ 检测到风格: 东北话
 ```
 
 ### 智能检测能力
@@ -89,9 +110,16 @@ python3 scripts/mimo_tts.py "（紧张，深呼吸）呼……冷静，冷静"
 
 ## 脚本版本
 
-- `mimo-tts.sh` - Shell 脚本（最简单）
-- `mimo_tts.js` - Node.js 脚本（推荐，兼容性好）
-- `mimo_tts.py` - Python 脚本（需要 openai 包）
+### 基础版本
+- `mimo-tts.sh` - Shell 脚本（基础）
+- `mimo_tts.js` - Node.js 脚本
+- `mimo_tts.py` - Python 脚本
+
+### 智能版本（推荐使用）
+- `mimo-tts-smart.sh` - **统一入口（推荐）**，自动选择最佳实现
+- `mimo_tts_smart.js` - NodeJS 智能版，功能最完善
+- `mimo_tts_smart.py` - Python 智能版，功能完整
+- `mimo_tts_smart.sh` - Shell 智能版，简化版
 
 ## 依赖
 
