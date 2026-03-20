@@ -1,5 +1,5 @@
 #!/bin/bash
-# MiMo TTS 智能版统一入口（主入口）
+# MiMo TTS 智能版统一入口
 # 自动分析文本情感和风格，生成语音
 # 支持多种实现：NodeJS (优先) → Python → Shell
 
@@ -22,12 +22,6 @@ if [ -z "$TEXT" ]; then
     echo "  - Python: 备用方案"
     echo "  - Shell: 基础实现"
     echo ""
-    echo "📁 目录结构:"
-    echo "  scripts/base/     - 基础版本实现"
-    echo "  scripts/smart/    - 智能版本实现"
-    echo "  scripts/utils/    - 工具脚本"
-    echo "  scripts/examples/ - 示例脚本"
-    echo ""
     echo "示例:"
     echo "  mimo-tts-smart.sh \"宝宝晚安，爱你哦～\""
     echo "  mimo-tts-smart.sh \"唱首歌给我听吧\""
@@ -47,15 +41,15 @@ echo "🔍 检查可用实现..."
 USE_VERSION=""
 
 # 优先使用 NodeJS 版本（功能最完善）
-if command -v node &> /dev/null && [ -f "$SCRIPT_DIR/smart/mimo_tts_smart.js" ]; then
+if command -v node &> /dev/null && [ -f "$SCRIPT_DIR/mimo_tts_smart.js" ]; then
     echo "  ✓ NodeJS 版本可用"
     USE_VERSION="nodejs"
 # 其次使用 Python 版本
-elif command -v python3 &> /dev/null && [ -f "$SCRIPT_DIR/smart/mimo_tts_smart.py" ]; then
+elif command -v python3 &> /dev/null && [ -f "$SCRIPT_DIR/mimo_tts_smart.py" ]; then
     echo "  ✓ Python 版本可用"
     USE_VERSION="python"
 # 最后使用 Shell 版本（智能分析简化版）
-elif [ -f "$SCRIPT_DIR/smart/mimo_tts_smart.sh" ]; then
+elif [ -f "$SCRIPT_DIR/mimo_tts_smart.sh" ]; then
     echo "  ✓ Shell 版本可用"
     USE_VERSION="shell"
 else
@@ -69,20 +63,20 @@ echo "🧠 智能分析文本中..."
 case "$USE_VERSION" in
     "nodejs")
         echo "  🟢 使用 NodeJS 智能版"
-        node "$SCRIPT_DIR/smart/mimo_tts_smart.js" "$TEXT" "$OUTPUT"
+        node "$SCRIPT_DIR/mimo_tts_smart.js" "$TEXT" "$OUTPUT"
         ;;
     "python")
         echo "  🟡 使用 Python 智能版"
-        python3 "$SCRIPT_DIR/smart/mimo_tts_smart.py" "$TEXT" "$OUTPUT"
+        python3 "$SCRIPT_DIR/mimo_tts_smart.py" "$TEXT" "$OUTPUT"
         ;;
     "shell")
         echo "  🟠 使用 Shell 智能版"
-        bash "$SCRIPT_DIR/smart/mimo_tts_smart.sh" "$TEXT" "$OUTPUT"
+        bash "$SCRIPT_DIR/mimo_tts_smart.sh" "$TEXT" "$OUTPUT"
         ;;
     "fallback")
         echo "  🔴 使用基础版本（需手动指定风格）"
         # 基础版本需要手动添加风格标签，这里简化处理
-        bash "$SCRIPT_DIR/base/mimo-tts.sh" "<style>普通话</style>$TEXT" "$OUTPUT"
+        bash "$SCRIPT_DIR/mimo-tts.sh" "<style>普通话</style>$TEXT" "$OUTPUT"
         ;;
 esac
 

@@ -54,7 +54,7 @@ clawhub install xiaomi-mimo-tts
 设置环境变量：
 
 ```bash
-export MIMO_API_KEY=your-api-key
+export XIAOMI_API_KEY=your-api-key
 ```
 
 获取 API Key: https://platform.xiaomimimo.com/
@@ -108,18 +108,41 @@ python3 scripts/mimo_tts.py "（紧张，深呼吸）呼……冷静，冷静"
 ~/.openclaw/skills/mimo-tts/scripts/test.sh
 ```
 
+## 📁 目录结构
+
+```
+scripts/
+├── mimo-tts.sh           # 基础版本统一入口
+├── mimo-tts-smart.sh     # 智能版本统一入口
+├── base/                 # 基础版本实现
+│   ├── mimo-tts.sh       # Shell 基础版
+│   ├── mimo_tts.js       # NodeJS 基础版
+│   └── mimo_tts.py       # Python 基础版
+├── smart/                # 智能版本实现
+│   ├── mimo_tts_smart.js    # NodeJS 智能版
+│   ├── mimo_tts_smart.py    # Python 智能版
+│   └── mimo_tts_smart.sh    # Shell 智能版
+├── utils/                # 工具脚本
+│   └── test.sh           # 测试脚本
+└── examples/             # 示例脚本
+    └── demo.sh           # 演示脚本
+```
+
 ## 脚本版本
 
-### 基础版本
-- `mimo-tts.sh` - Shell 脚本（基础）
-- `mimo_tts.js` - Node.js 脚本
-- `mimo_tts.py` - Python 脚本
+### 统一入口（推荐）
+- `mimo-tts.sh` - 基础版本统一入口
+- `mimo-tts-smart.sh` - **智能版本统一入口（推荐）**
 
-### 智能版本（推荐使用）
-- `mimo-tts-smart.sh` - **统一入口（推荐）**，自动选择最佳实现
-- `mimo_tts_smart.js` - NodeJS 智能版，功能最完善
-- `mimo_tts_smart.py` - Python 智能版，功能完整
-- `mimo_tts_smart.sh` - Shell 智能版，简化版
+### 基础版本
+- `base/mimo-tts.sh` - Shell 脚本（基础）
+- `base/mimo_tts.js` - Node.js 脚本
+- `base/mimo_tts.py` - Python 脚本
+
+### 智能版本
+- `smart/mimo_tts_smart.js` - NodeJS 智能版，功能最完善
+- `smart/mimo_tts_smart.py` - Python 智能版，功能完整
+- `smart/mimo_tts_smart.sh` - Shell 智能版，简化版
 
 ## 依赖
 
