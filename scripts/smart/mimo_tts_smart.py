@@ -118,9 +118,9 @@ def synthesize_smart(text, output_file='output.wav'):
     
     print("🎤 合成中...")
     
-    api_key = os.getenv('MIMO_API_KEY')
+    api_key = os.getenv('XIAOMI_API_KEY') or os.getenv('MIMO_API_KEY')
     if not api_key:
-        print("错误: 请设置 MIMO_API_KEY 环境变量")
+        print("错误: 请设置 XIAOMI_API_KEY 或 MIMO_API_KEY 环境变量 (优先使用 XIAOMI_API_KEY)")
         sys.exit(1)
     
     # 调用基础脚本

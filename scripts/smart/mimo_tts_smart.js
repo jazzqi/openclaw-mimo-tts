@@ -98,9 +98,9 @@ async function synthesizeSmart(text, output = 'output.wav') {
   if (styleTag) console.log(`🏷️ 风格: ${styleTag}`);
   console.log(`🎤 合成中...`);
 
-  const apiKey = process.env.MIMO_API_KEY;
+  const apiKey = process.env.XIAOMI_API_KEY || process.env.MIMO_API_KEY;
   if (!apiKey) {
-    console.error('错误: 请设置 MIMO_API_KEY');
+    console.error('错误: 请设置 XIAOMI_API_KEY 或 MIMO_API_KEY (优先使用 XIAOMI_API_KEY)');
     process.exit(1);
   }
 
