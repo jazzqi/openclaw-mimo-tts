@@ -90,6 +90,61 @@ description: |
 | 中文女声 | `default_zh` |
 | 英文女声 | `default_eh` |
 
+## 🤖 智能版本 (mimo_tts_smart.js)
+
+我们提供了一个智能脚本，可以自动分析文本内容并选择合适的风格：
+
+### 功能特点
+
+**自动分析**：
+- 检测情感关键词（开心、悲伤、紧张、愤怒、惊讶、温柔）
+- 识别方言特征（东北话、四川话、台湾腔、粤语）
+- 判断特殊效果（悄悄话、夹子音、唱歌）
+- 检测诗词格式（多行短句自动识别）
+
+### 使用方式
+
+```bash
+# 智能版 - 自动分析
+node ~/.openclaw/skills/xiaomi-mimo-tts/scripts/mimo_tts_smart.js "文本内容" [输出文件]
+
+# 示例
+node scripts/mimo_tts_smart.js "宝宝晚安，爱你哦～" output.ogg
+# 会自动添加 <style>温柔</style> 标签
+
+node scripts/mimo_tts_smart.js "唱首歌给我听吧" output.ogg
+# 会自动添加 <style>唱歌</style> 标签
+```
+
+### Agent 使用建议
+
+Agent 可以直接调用智能版脚本，无需手动判断风格：
+
+```bash
+# 使用智能版（推荐）
+~/.openclaw/skills/xiaomi-mimo-tts/scripts/mimo-tts-smart.sh "$TEXT" "$OUTPUT_FILE"
+
+# 或直接调用 Node 版本
+~/.openclaw/skills/xiaomi-mimo-tts/scripts/mimo_tts_smart.js "$TEXT" "$OUTPUT_FILE"
+```
+
+**推荐使用 `mimo-tts-smart.sh`**，因为它有更好的错误处理和输出反馈。
+
+脚本会自动分析：
+1. 根据情感关键词选择相应风格
+2. 根据方言特征选择方言
+3. 根据内容类型调整语速和效果
+4. 诗词内容自动使用温柔风格
+
+### 手动覆盖
+
+如果需要强制使用特定风格，可以继续使用基础版本的 style 标签：
+
+```bash
+# 手动指定风格（覆盖智能分析）
+MIMO_STYLE="夹子音" ~/.openclaw/skills/xiaomi-mimo-tts/scripts/mimo-tts.sh "文本"
+```
+
 ## 配置
 
 ```bash
