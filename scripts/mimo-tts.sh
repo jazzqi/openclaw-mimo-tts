@@ -1,4 +1,5 @@
 #!/bin/bash
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_env.sh"
 # MiMo TTS 基础版本统一入口
 # 支持多种实现：NodeJS (优先) → Python → Shell
 

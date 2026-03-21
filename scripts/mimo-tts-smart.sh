@@ -1,4 +1,5 @@
 #!/bin/bash
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_env.sh"
 # MiMo TTS 智能版统一入口（主入口）
 # 自动分析文本情感和风格，生成语音
 # 支持多种实现：NodeJS (优先) → Python → Shell
