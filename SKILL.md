@@ -42,7 +42,7 @@ scripts/
 
 ### 基础用法
 ```bash
-~/.openclaw/skills/xiaomi-mimo-tts/scripts/mimo-tts.sh "文本" [输出文件]
+./scripts/mimo-tts.sh "文本" [输出文件]
 ```
 
 ### 带风格标签
@@ -135,16 +135,16 @@ scripts/
 
 ```bash
 # 推荐：使用统一入口（自动选择最佳实现）
-~/.openclaw/skills/xiaomi-mimo-tts/scripts/mimo-tts-smart.sh "文本内容" [输出文件]
+./scripts/mimo-tts-smart.sh "文本内容" [输出文件]
 
 # 直接调用 NodeJS 版本（功能最完善）
-node ~/.openclaw/skills/xiaomi-mimo-tts/scripts/mimo_tts_smart.js "文本内容" [输出文件]
+node ./scripts/mimo_tts_smart.js "文本内容" [输出文件]
 
 # 直接调用 Python 版本
-python3 ~/.openclaw/skills/xiaomi-mimo-tts/scripts/mimo_tts_smart.py "文本内容" [输出文件]
+python3 ./scripts/mimo_tts_smart.py "文本内容" [输出文件]
 
 # 直接调用 Shell 版本（简化版）
-~/.openclaw/skills/xiaomi-mimo-tts/scripts/mimo_tts_smart.sh "文本内容" [输出文件]
+./scripts/mimo_tts_smart.sh "文本内容" [输出文件]
 
 # 示例
 mimo-tts-smart.sh "宝宝晚安，爱你哦～" output.ogg
@@ -183,7 +183,7 @@ mimo-tts-smart.sh "老铁，咋整啊？" output.ogg
 
 ```bash
 # 手动指定风格（覆盖智能分析）
-MIMO_STYLE="夹子音" ~/.openclaw/skills/xiaomi-mimo-tts/scripts/mimo-tts.sh "文本"
+MIMO_STYLE="夹子音" ./scripts/mimo-tts.sh "文本"
 ```
 
 ## 配置
