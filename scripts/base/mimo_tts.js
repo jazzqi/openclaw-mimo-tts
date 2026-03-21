@@ -30,15 +30,52 @@ if (MOCK) {
   process.exit(0);
 }
 
-// Real implementation placeholder: call Xiaomi API (mocked)
-console.log('Real API key present but remote call not implemented in this template.');
-console.log('Would send text length', text.length, 'voice', voice, 'style', style);
-// For safety, write mock output
-try{
-  fs.writeFileSync(output,'');
-  console.log(output);
-  process.exit(0);
-}catch(e){
-  console.error('Failed to write output', e);
-  process.exit(1);
-}
+// Real implementation: call Xiaomi MiMo API and decode returned base64 audio
+const https = require('https');
+
+const body = JSON.stringify({
+  model: 'mimo-v2-tts',
+  messages: [
+    {role: 'user', content: '请朗读'},
+    {role: 'assistant', content: text}
+  ],
+  audio: {format: 'wav', voice}
+});
+
+const options = {
+  hostname: 'api.xiaomimimo.com',
+  port: 443,
+  path: '/v1/chat/completions',
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${XIAOMI_API_KEY}`,
+    'Content-Type': 'application/json',
+    'Content-Length': Buffer.byteLength(body)
+  }
+};
+
+const req = https.request(options, (res) => {
+  let data = '';
+  res.on('data', (chunk) => data += chunk);
+  res.on('end', () => {
+    try {
+      const j = JSON.parse(data);
+      const audio_b64 = j.choices[0].message.audio.data;
+      const wav = Buffer.from(audio_b64, 'base64');
+      const wavPath = output + '.wav';
+      fs.writeFileSync(wavPath, wav);
+      // convert to ogg
+      const ff = spawnSync('ffmpeg', ['-y','-i',wavPath,'-acodec','libopus','-b:a','128k',output]);
+      try{ fs.unlinkSync(wavPath);}catch(e){}
+      console.log(output);
+    } catch (e) {
+      console.error('Failed to parse response or extract audio', e);
+      console.error(data);
+      process.exit(1);
+    }
+  });
+});
+
+req.on('error', (e) => { console.error('Request error', e); process.exit(1); });
+req.write(body);
+req.end();
