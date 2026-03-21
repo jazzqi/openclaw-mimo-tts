@@ -1,0 +1,4 @@
+
+# Generated audio artifacts
+out/*.ogg
+output.mock.ogg
