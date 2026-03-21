@@ -1,7 +1,1 @@
-{
-  "version": 1,
-  "registry": "https://clawhub.ai",
-  "slug": "xiaomi-mimo-tts",
-  "installedVersion": "1.1.1",
-  "installedAt": 1773935085726
-}
+{"slug":"xiaomi-mimo-tts","name":"Xiaomi MiMo Tts","owner":"jazzqi","latest":"1.2.5","updated":"2026-03-21T10:27:23.602Z","tags":{"latest":"1.2.5","mimo":"1.2.5","tts":"1.2.5","xiaomi":"1.2.5"}}
