@@ -1,80 +1,67 @@
-#!/bin/bash
-# MiMo TTS - 使用小米米萌 API 生成语音
-# 支持风格控制、音频标签、多种语音
+#!/usr/bin/env bash
+# Shell base implementation wrapper for mimo-tts
+# Supports: --voice, --style, --dry-run
+
+set -euo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/_env.sh"
 
 TEXT="$1"
-API_KEY="${XIAOMI_API_KEY:-${MIMO_API_KEY}}"
-VOICE="${MIMO_VOICE:-default_zh}"
+OUTPUT="${2:-$SKILL_OUT/output.mock.ogg}"
+shift || true
+
+VOICE="${MIMO_VOICE:-mimo_default}"
 STYLE="${MIMO_STYLE:-}"
-OUTPUT="${2:-/tmp/mimo-tts-$(date +%s).ogg}"
+DRY=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --voice) VOICE="$2"; shift 2;;
+    --style) STYLE="$2"; shift 2;;
+    --dry-run) DRY=1; shift;;
+    *) shift;;
+  esac
+done
 
-if [ -z "$TEXT" ]; then
-    echo "用法: mimo-tts.sh \"文本\" [输出文件]"
-    echo ""
-    echo "选项:"
-    echo "  XIAOMI_API_KEY 或 MIMO_API_KEY  API密钥 (优先使用 XIAOMI_API_KEY)"
-    echo "  MIMO_VOICE    语音类型 (default: default_zh)"
-    echo "  MIMO_STYLE    风格 (如: 夹子音, 开心, 悲伤)"
-    echo ""
-    echo "语音类型:"
-    echo "  mimo_default  - MiMo默认"
-    echo "  default_zh    - 中文女声 (默认)"
-    echo "  default_eh    - 英文女声"
-    echo ""
-    echo "示例:"
-    echo "  mimo-tts.sh \"你好世界\""
-    echo "  MIMO_STYLE=夹子音 mimo-tts.sh \"主人～我来啦！\""
-    echo "  mimo-tts.sh \"<style>夹子音</style>主人～我来啦！\""
-    exit 1
+if [[ -n "$STYLE" && "$TEXT" != "<style>*" ]]; then
+  TEXT="<style>$STYLE</style>$TEXT"
 fi
 
-if [ -z "$API_KEY" ]; then
-    echo "错误: 请设置 MIMO_API_KEY 环境变量"
-    exit 1
+if [[ $DRY -eq 1 ]]; then
+  echo "DRY RUN: request payload preview"
+  python3 - <<PY
+import json
+body={
+  'model':'mimo-v2-tts',
+  'messages':[{'role':'user','content':'请朗读'},{'role':'assistant','content':"""$TEXT"""}],
+  'audio':{'format':'wav','voice':'$VOICE'}
+}
+print(json.dumps(body,ensure_ascii=False,indent=2))
+PY
+  exit 0
 fi
 
-# 如果设置了 MIMO_STYLE，自动添加 style 标签
-if [ -n "$STYLE" ] && [[ "$TEXT" != \<style\>* ]]; then
-    TEXT="<style>$STYLE</style>$TEXT"
+# prefer node -> python -> shell implementations
+if command -v node >/dev/null 2>&1 && [ -f "${SKILL_HOME}/scripts/base/mimo_tts.js" ]; then
+  node "${SKILL_HOME}/scripts/base/mimo_tts.js" "$TEXT" "$OUTPUT" --voice "$VOICE"
+  exit $?
 fi
 
-# 调用 API
-RESPONSE=$(curl -s -X POST "https://api.xiaomimimo.com/v1/chat/completions" \
-    -H "Authorization: Bearer $API_KEY" \
-    -H "Content-Type: application/json" \
-    -d "{
-        \"model\": \"mimo-v2-tts\",
-        \"messages\": [
-            {\"role\": \"user\", \"content\": \"请朗读\"},
-            {\"role\": \"assistant\", \"content\": \"$TEXT\"}
-        ],
-        \"audio\": {
-            \"format\": \"wav\",
-            \"voice\": \"$VOICE\"
-        }
-    }")
-
-# 使用 Python 提取音频数据
-AUDIO_DATA=$(echo "$RESPONSE" | python3 -c "
-import json, sys
-data = json.load(sys.stdin)
-try:
-    print(data['choices'][0]['message']['audio']['data'])
-except (KeyError, IndexError, TypeError):
-    print('null')
-")
-
-if [ -z "$AUDIO_DATA" ] || [ "$AUDIO_DATA" = "null" ]; then
-    echo "错误: API 调用失败"
-    echo "$RESPONSE"
-    exit 1
+if command -v python3 >/dev/null 2>&1 && [ -f "${SKILL_HOME}/scripts/base/mimo_tts.py" ]; then
+  python3 "${SKILL_HOME}/scripts/base/mimo_tts.py" "$TEXT" "$OUTPUT" --voice "$VOICE"
+  exit $?
 fi
 
-# 解码并保存
-echo "$AUDIO_DATA" | base64 -d > "$OUTPUT.wav"
+# fallback: simple curl-based request
+curl -s -X POST "https://api.xiaomimimo.com/v1/chat/completions" \
+  -H "Authorization: Bearer ${XIAOMI_API_KEY}" \
+  -H "Content-Type: application/json" \
+  -d "$(printf '%s' "{\"model\":\"mimo-v2-tts\",\"messages\":[{\"role\":\"user\",\"content\":\"请朗读\"},{\"role\":\"assistant\",\"content\":\"$TEXT\"}],\"audio\":{\"format\":\"wav\",\"voice\":\"$VOICE\"}}")" \
+  | jq -r '.choices[0].message.audio.data' | base64 -d > "$OUTPUT.wav" || true
 
-# 转换为 OGG
-ffmpeg -y -i "$OUTPUT.wav" -acodec libopus -b:a 128k "$OUTPUT" 2>/dev/null
-rm -f "$OUTPUT.wav"
+if command -v ffmpeg >/dev/null 2>&1; then
+  ffmpeg -y -i "$OUTPUT.wav" -acodec libopus -b:a 128k "$OUTPUT" >/dev/null 2>&1 && rm -f "$OUTPUT.wav"
+else
+  echo "ffmpeg not found; leaving wav at $OUTPUT.wav"
+  mv "$OUTPUT.wav" "$OUTPUT"
+fi
 
 echo "$OUTPUT"
