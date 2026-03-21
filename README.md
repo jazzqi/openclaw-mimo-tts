@@ -11,20 +11,20 @@
 | 版本 | 文件 | 特点 | 推荐度 |
 |------|------|------|--------|
 | **统一入口** | `mimo-tts-smart.sh` | 自动选择最佳实现 | ★★★★★ |
-| **NodeJS 版** | `mimo_tts_smart.js` | 功能最完善 | ★★★★★ |
-| **Python 版** | `mimo_tts_smart.py` | 功能完整，备用方案 | ★★★★☆ |
+| **NodeJS 版 (removed in this release)** | `mimo_tts_smart.js` | 功能最完善 | ★★★★★ |
+| **Python 版 (removed in this release)** | `mimo_tts_smart.py` | 功能完整，备用方案 | ★★★★☆ |
 | **Shell 版** | `mimo_tts_smart.sh` | 简化版，兼容性好 | ★★★☆☆ |
 
 ```bash
 # 推荐：统一入口（自动选择最佳实现）
 scripts/mimo-tts-smart.sh "今天太开心了，哈哈！" output.ogg
 
-# 直接调用 NodeJS 版（功能最完整）
+# 直接调用 NodeJS 版 (removed in this release)（功能最完整）
 node scripts/mimo_tts_smart.js "今天太开心了，哈哈！" output.ogg
 # 输出: 📊 检测结果: 情感: happy
 #       🏷️ 风格: <style>开心</style>
 
-# Python 版
+# Python 版 (removed in this release)
 python3 scripts/mimo_tts_smart.py "宝宝晚安，爱你哦～" output.ogg
 # 输出: 📊 检测结果: 情感: gentle
 #       🏷️ 风格: <style>温柔</style>
@@ -142,8 +142,8 @@ scripts/
 
 ### 基础版本
 - `base/mimo-tts.sh` - Shell 脚本（基础）
-- `base/mimo_tts.js` - Node.js 脚本
-- `base/mimo_tts.py` - Python 脚本
+- `base/mimo_tts.js (removed)` - Node.js 脚本
+- `base/mimo_tts.py (removed)` - Python 脚本
 
 ### 智能版本
 - `smart/mimo_tts_smart.js` - NodeJS 智能版，功能最完善
