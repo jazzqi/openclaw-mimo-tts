@@ -189,3 +189,28 @@ npx @openclaw/skill-runner run ~/.openclaw/skills/xiaomi-mimo-tts -- "<style>温
 ```
 
 - 建议方式：将技能作为本地依赖或通过 clawhub 管理，npx 适合临时运行或测试场景。
+
+
+## 发布到 skills.sh / ClawHub
+
+如果你想把该技能发布到 skills.sh（ClawHub 注册表），参考以下步骤：
+
+1. 准备发布包（已在仓库根目录生成 `.skill` 打包文件）：
+   - 文件名示例： `xiaomi-mimo-tts.skill`
+2. 选择版本号：确保该版本号在 registry 中未被占用（见 `clawhub inspect xiaomi-mimo-tts`）。
+3. 使用 `clawhub` CLI 发布：
+
+```bash
+clawhub publish ~/.openclaw/skills/xiaomi-mimo-tts --version 1.3.0 --name "Xiaomi MiMo TTS" --tags "tts,mimo,xiaomi" --changelog "短的发布说明"
+```
+
+4. 若发布失败提示版本已存在：
+   - 选择新的语义化版本号（例如 1.3.1）或联系当前 skill 所有者来更新已有条目。
+5. 注意事项与权限：
+   - 发布需要在 ClawHub 上登录且拥有相应权限（owner 或有发布权限的账号）。
+   - CI/自动化在运行真实发布前不要把 secrets 写入公开 workflow；优先在本地或受控环境执行。
+
+6. 发布后（可选）：
+   - 在 GitHub Release 中附加 `.skill` 包作为 artifact（已完成示例）。
+   - 在 README 中加入安装示例（clawhub install 或 npx 运行示例）。
+
