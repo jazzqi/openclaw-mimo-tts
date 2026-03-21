@@ -26,8 +26,54 @@ if MOCK:
     print(output)
     sys.exit(0)
 
-# Real implementation placeholder
-print('Real API key present but remote call not implemented in this template.')
-open(output,'wb').close()
+# Real implementation: call Xiaomi MiMo API and decode returned base64 audio
+import json, base64, urllib.request
+
+# Build request body: assistant message contains the target text
+body = {
+    "model": "mimo-v2-tts",
+    "messages": [
+        {"role": "user", "content": "请朗读"},
+        {"role": "assistant", "content": text}
+    ],
+    "audio": {"format": "wav", "voice": voice}
+}
+
+req = urllib.request.Request(
+    'https://api.xiaomimimo.com/v1/chat/completions',
+    data=json.dumps(body).encode('utf-8'),
+    headers={
+        'Authorization': f'Bearer {XIAOMI_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+try:
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        resp_text = resp.read().decode('utf-8')
+except Exception as e:
+    print('API request failed:', e)
+    sys.exit(1)
+
+try:
+    data = json.loads(resp_text)
+    audio_b64 = data['choices'][0]['message']['audio']['data']
+except Exception as e:
+    print('Failed to parse audio from response:', e)
+    print(resp_text)
+    sys.exit(1)
+
+wav = base64.b64decode(audio_b64)
+wav_path = output + '.wav'
+with open(wav_path, 'wb') as f:
+    f.write(wav)
+
+# convert wav to ogg if ffmpeg exists
+try:
+    subprocess.run(['ffmpeg','-y','-i',wav_path,'-acodec','libopus','-b:a','128k',output], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    os.remove(wav_path)
+except Exception:
+    # if conversion fails, leave wav as output
+    os.rename(wav_path, output)
+
 print(output)
 sys.exit(0)
