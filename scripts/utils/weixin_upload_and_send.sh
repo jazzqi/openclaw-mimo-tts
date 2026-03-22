@@ -67,7 +67,7 @@ REQ=$(python3 - <<PY
 import json,os
 body={
   'filekey': os.getenv('FILEKEY') or '',
-  'media_type': 4,
+  'media_type': 3,
   'to_user_id': os.getenv('TO_USER_ID') or '',
   'rawsize': int(os.getenv('RAWSIZE','0')),
   'rawfilemd5': os.getenv('RAWMD5',''),
