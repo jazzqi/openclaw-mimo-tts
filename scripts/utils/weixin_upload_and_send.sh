@@ -6,7 +6,10 @@ set -euo pipefail
 ENC_FILE="$1"
 AES_KEY_B64="$2"
 TO_USER_ID="$3"
-FILEKEY="${4:-file-$(date +%s)}"
+# optional param: original plaintext filename (for filekey or naming)
+PLAIN_FILEPATH="${4:-}"
+AES_HEX_PARAM="${5:-}"
+FILEKEY="${6:-file-$(date +%s)}"
 
 # load account token and baseUrl
 ACCT_JSON=$(python3 - <<PY
@@ -31,25 +34,39 @@ PY
 CIPHER_SIZE=$(wc -c < "$ENC_FILE" | tr -d '[:space:]')
 
 # prepare request body for getUploadUrl
+# compute plaintext size and md5 if original path provided
+RAWSIZE=0
+RAWMD5=""
+if [ -n "$PLAIN_FILEPATH" ] && [ -f "$PLAIN_FILEPATH" ]; then
+  RAWSIZE=$(wc -c < "$PLAIN_FILEPATH" | tr -d '[:space:]')
+  RAWMD5=$(python3 -c "import hashlib,sys;print(hashlib.md5(open(sys.argv[1],'rb').read()).hexdigest())" "$PLAIN_FILEPATH")
+fi
+
+PLAYTIME_MS="${7:-}"
+
 REQ=$(python3 - <<PY
-import json
+import json,os
 body={
   'filekey': '$FILEKEY',
-  'media_type': 3,
+  'media_type': 4,
   'to_user_id': '$TO_USER_ID',
-  'rawsize': 0,
-  'rawfilemd5': '',
+  'rawsize': int(os.getenv('RAWSIZE', '0')),
+  'rawfilemd5': os.getenv('RAWMD5', ''),
   'filesize': $CIPHER_SIZE,
   'thumb_rawsize': 0,
   'thumb_rawfilemd5': '',
-  'thumb_filesize': 0
+  'thumb_filesize': 0,
+  'base_info': {}
 }
+# include aeskey if provided
+if os.getenv('AES_HEX_PARAM'):
+    body['aeskey']=os.getenv('AES_HEX_PARAM')
 print(json.dumps(body))
 PY
 )
 
 # call getUploadUrl
-GETURL_RESP=$(curl -s -X POST "$BASEURL/getuploadurl" \
+GETURL_RESP=$(curl -s -X POST "$BASEURL/ilink/bot/getuploadurl" \
   -H "Content-Type: application/json" \
   -H "AuthorizationType: ilink_bot_token" \
   -H "Authorization: Bearer $TOKEN" \
@@ -76,32 +93,36 @@ HTTP_RESP=$(curl -s -X PUT "$UPLOAD_URL" \
   -H "Authorization: Bearer $TOKEN" \
   --data-binary "@$ENC_FILE")
 
-# prepare voice_item (CDNMedia)
+# prepare voice_item (CDNMedia) and voice metadata
 CDN_MEDIA_JSON=$(python3 - <<PY
 import json
-# construct a simple CDNMedia reference using encrypt_query_param as returned upload_param and aes_key
 media={'encrypt_query_param': '$UPLOAD_PARAM', 'aes_key': '$AES_KEY_B64'}
 print(json.dumps(media))
 PY
 )
 
-# Construct sendMessage body
+# Construct sendMessage body with voice metadata if playtime provided
 SENDBODY=$(python3 - <<PY
-import json
+import json,sys
+media=json.loads('''$CDN_MEDIA_JSON''')
+voice_item={'media': media}
+# include encode/sample/playtime if provided
+play_ms = int('$PLAYTIME_MS') if '$PLAYTIME_MS' else None
+if play_ms:
+    voice_item.update({'encode_type':6,'sample_rate':16000,'playtime':play_ms})
 body={'msg':{
   'to_user_id':'$TO_USER_ID',
   'context_token':'',
-  'item_list':[{
-    'type':3,
-    'voice_item': json.loads('''$CDN_MEDIA_JSON''')
-  }]
+  'item_list':[
+    {'type':3,'voice_item': voice_item}
+  ]
 }}
 print(json.dumps(body))
 PY
 )
 
 # Call sendMessage
-SEND_RESP=$(curl -s -X POST "$BASEURL/sendmessage" \
+SEND_RESP=$(curl -s -X POST "$BASEURL/ilink/bot/sendmessage" \
   -H "Content-Type: application/json" \
   -H "AuthorizationType: ilink_bot_token" \
   -H "Authorization: Bearer $TOKEN" \
