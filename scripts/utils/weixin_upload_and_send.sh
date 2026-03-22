@@ -1,15 +1,15 @@
 #!/bin/bash
 # Upload encrypted file to Weixin CDN and send as voice message via openclaw-weixin backend
-# Usage: weixin_upload_and_send.sh enc_file aes_key_b64 to_user_id filekey
+# Usage: weixin_upload_and_send.sh enc_file aes_key_b64 to_user_id filekey [aes_hex] [filekey_override] [playtime_ms]
 
 set -euo pipefail
 ENC_FILE="$1"
 AES_KEY_B64="$2"
 TO_USER_ID="$3"
-# optional param: original plaintext filename (for filekey or naming)
 PLAIN_FILEPATH="${4:-}"
 AES_HEX_PARAM="${5:-}"
 FILEKEY="${6:-file-$(date +%s)}"
+PLAY_MS="${7:-}"
 
 # load account token and baseUrl
 ACCT_JSON=$(python3 - <<PY
@@ -29,6 +29,21 @@ ac='$ACCT_JSON'
 print(json.load(open(ac))['baseUrl'])
 PY
 )
+# try to read cdnBaseUrl from account file; fall back to known default
+CDN_BASE_URL=$(python3 - <<PY
+import json,os
+ac='$ACCT_JSON'
+try:
+    j=json.load(open(ac))
+    cb=j.get('cdnBaseUrl') or ''
+    if cb:
+        print(cb.rstrip('/'))
+    else:
+        print('https://novac2c.cdn.weixin.qq.com/c2c')
+except Exception:
+    print('https://novac2c.cdn.weixin.qq.com/c2c')
+PY
+)
 
 # compute ciphertext size
 CIPHER_SIZE=$(wc -c < "$ENC_FILE" | tr -d '[:space:]')
@@ -42,25 +57,25 @@ if [ -n "$PLAIN_FILEPATH" ] && [ -f "$PLAIN_FILEPATH" ]; then
   RAWMD5=$(python3 -c "import hashlib,sys;print(hashlib.md5(open(sys.argv[1],'rb').read()).hexdigest())" "$PLAIN_FILEPATH")
 fi
 
-PLAYTIME_MS="${7:-}"
-
+# Build JSON body for getUploadUrl — embed AES hex directly if provided
 REQ=$(python3 - <<PY
 import json,os
 body={
   'filekey': '$FILEKEY',
   'media_type': 4,
   'to_user_id': '$TO_USER_ID',
-  'rawsize': int(os.getenv('RAWSIZE', '0')),
-  'rawfilemd5': os.getenv('RAWMD5', ''),
-  'filesize': $CIPHER_SIZE,
+  'rawsize': %s,
+  'rawfilemd5': '%s',
+  'filesize': %s,
   'thumb_rawsize': 0,
   'thumb_rawfilemd5': '',
   'thumb_filesize': 0,
   'base_info': {}
-}
-# include aeskey if provided
-if os.getenv('AES_HEX_PARAM'):
-    body['aeskey']=os.getenv('AES_HEX_PARAM')
+} % (int(os.getenv('RAWSIZE','0')), os.getenv('RAWMD5',''), %s)
+# include aeskey if provided (hex string)
+AES_HEX = '%s'
+if AES_HEX:
+    body['aeskey']=AES_HEX
 print(json.dumps(body))
 PY
 )
@@ -79,18 +94,16 @@ if [ -z "$UPLOAD_PARAM" ]; then
   exit 3
 fi
 
-# The upload_param may be a URL or JSON; try to use as URL directly if it looks like one
+# The upload_param may be a full URL (rare) or an encrypted param. Construct CDN upload URL using cdnBaseUrl.
 if echo "$UPLOAD_PARAM" | grep -qE '^https?://'; then
   UPLOAD_URL="$UPLOAD_PARAM"
 else
-  # if upload_param is encrypted params, attempt to POST to BASEURL/upload with params
-  UPLOAD_URL="$BASEURL/upload?param=$UPLOAD_PARAM"
+  UPLOAD_URL="$CDN_BASE_URL/upload?encrypted_query_param=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$UPLOAD_PARAM")&filekey=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$FILEKEY")"
 fi
 
-# PUT encrypted content to CDN
-HTTP_RESP=$(curl -s -X PUT "$UPLOAD_URL" \
-  -H "AuthorizationType: ilink_bot_token" \
-  -H "Authorization: Bearer $TOKEN" \
+# Upload ciphertext to CDN. Use POST as the plugin implementation expects POST, not PUT. No Authorization header required for CDN.
+HTTP_RESP=$(curl -s -X POST "$UPLOAD_URL" \
+  -H "Content-Type: application/octet-stream" \
   --data-binary "@$ENC_FILE")
 
 # prepare voice_item (CDNMedia) and voice metadata
@@ -106,8 +119,10 @@ SENDBODY=$(python3 - <<PY
 import json,sys
 media=json.loads('''$CDN_MEDIA_JSON''')
 voice_item={'media': media}
-# include encode/sample/playtime if provided
-play_ms = int('$PLAYTIME_MS') if '$PLAYTIME_MS' else None
+try:
+    play_ms = int('%s') if '%s' else None
+except:
+    play_ms = None
 if play_ms:
     voice_item.update({'encode_type':6,'sample_rate':16000,'playtime':play_ms})
 body={'msg':{
