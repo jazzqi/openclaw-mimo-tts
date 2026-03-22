@@ -14,8 +14,8 @@ fi
 # default to current account userId
 if [ -z "$TO_USER_ID" ]; then
   TO_USER_ID=$(python3 - <<PY
-import json
-ac='~/.openclaw/openclaw-weixin/accounts/e182ae9e613f-im-bot.json'
+import json,os
+ac=os.path.expanduser('~/.openclaw/openclaw-weixin/accounts/e182ae9e613f-im-bot.json')
 print(json.load(open(ac))['userId'])
 PY
 )
@@ -25,8 +25,8 @@ OUT_OGG="/tmp/mimo_send_weixin_$(date +%s).ogg"
 OUT_AMR="${OUT_OGG%.ogg}.amr"
 OUT_ENC="${OUT_AMR}.enc"
 
-# synthesize using smart entry
-~/.openclaw/skills/xiaomi-mimo-tts/scripts/mimo-tts-smart.sh "<style>普通话 朗读</style>$TEXT" "$OUT_OGG"
+# synthesize using Python smart implementation (avoid NodeJS DRY bug)
+python3 ~/.openclaw/skills/xiaomi-mimo-tts/scripts/smart/mimo_tts_smart.py "<style>普通话 朗读</style>$TEXT" "$OUT_OGG"
 
 # convert to AMR NB 8k
 ffmpeg -y -i "$OUT_OGG" -ac 1 -ar 8000 -c:a libopencore_amrnb "$OUT_AMR" 2>/dev/null

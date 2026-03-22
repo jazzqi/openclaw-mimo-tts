@@ -9,17 +9,21 @@ TO_USER_ID="$3"
 FILEKEY="${4:-file-$(date +%s)}"
 
 # load account token and baseUrl
-ACCT_JSON=~/.openclaw/openclaw-weixin/accounts/e182ae9e613f-im-bot.json
+ACCT_JSON=$(python3 - <<PY
+import os
+print(os.path.expanduser('~/.openclaw/openclaw-weixin/accounts/e182ae9e613f-im-bot.json'))
+PY
+)
 TOKEN=$(python3 - <<PY
 import json
-d=json.load(open('$ACCT_JSON'))
-print(d['token'])
+ac='$ACCT_JSON'
+print(json.load(open(ac))['token'])
 PY
 )
 BASEURL=$(python3 - <<PY
 import json
-d=json.load(open('$ACCT_JSON'))
-print(d['baseUrl'])
+ac='$ACCT_JSON'
+print(json.load(open(ac))['baseUrl'])
 PY
 )
 
