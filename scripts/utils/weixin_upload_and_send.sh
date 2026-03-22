@@ -57,23 +57,28 @@ if [ -n "$PLAIN_FILEPATH" ] && [ -f "$PLAIN_FILEPATH" ]; then
   RAWMD5=$(python3 -c "import hashlib,sys;print(hashlib.md5(open(sys.argv[1],'rb').read()).hexdigest())" "$PLAIN_FILEPATH")
 fi
 
-# Build JSON body for getUploadUrl — embed AES hex directly if provided
+# Build JSON body for getUploadUrl — use environment variables to avoid shell formatting issues
+export RAWSIZE="$RAWSIZE"
+export RAWMD5="$RAWMD5"
+export FILESIZE="$CIPHER_SIZE"
+export AES_HEX="$AES_HEX_PARAM"
+
 REQ=$(python3 - <<PY
 import json,os
 body={
-  'filekey': '$FILEKEY',
+  'filekey': os.getenv('FILEKEY') or '',
   'media_type': 4,
-  'to_user_id': '$TO_USER_ID',
-  'rawsize': %s,
-  'rawfilemd5': '%s',
-  'filesize': %s,
+  'to_user_id': os.getenv('TO_USER_ID') or '',
+  'rawsize': int(os.getenv('RAWSIZE','0')),
+  'rawfilemd5': os.getenv('RAWMD5',''),
+  'filesize': int(os.getenv('FILESIZE','0')),
   'thumb_rawsize': 0,
   'thumb_rawfilemd5': '',
   'thumb_filesize': 0,
   'base_info': {}
-} % (int(os.getenv('RAWSIZE','0')), os.getenv('RAWMD5',''), %s)
+}
 # include aeskey if provided (hex string)
-AES_HEX = '%s'
+AES_HEX = os.getenv('AES_HEX','')
 if AES_HEX:
     body['aeskey']=AES_HEX
 print(json.dumps(body))
