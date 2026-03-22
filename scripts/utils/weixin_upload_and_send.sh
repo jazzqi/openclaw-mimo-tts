@@ -107,21 +107,71 @@ else
 fi
 
 # Upload ciphertext to CDN. Use POST as the plugin implementation expects POST, not PUT. No Authorization header required for CDN.
-HTTP_RESP=$(curl -s -X POST "$UPLOAD_URL" \
+TS=$(date +%s)
+HDRFILE="/tmp/cdn_headers_${TS}.txt"
+BODYFILE="/tmp/cdn_body_${TS}.bin"
+HTTP_STATUS=$(curl -s -w "%{http_code}" -D "$HDRFILE" -o "$BODYFILE" -X POST "$UPLOAD_URL" \
   -H "Content-Type: application/octet-stream" \
   --data-binary "@$ENC_FILE")
 
-# prepare voice_item (CDNMedia) and voice metadata
+# extract x-encrypted-param from headers if present
+X_ENC_PARAM=$(grep -i '^x-encrypted-param:' "$HDRFILE" | sed -E 's/^[^:]+:[[:space:]]*//' | tr -d '\r' || true)
+if [ -n "$X_ENC_PARAM" ]; then
+  ENCRYPT_QUERY_PARAM="$X_ENC_PARAM"
+else
+  ENCRYPT_QUERY_PARAM="$UPLOAD_PARAM"
+fi
+
+# prepare voice_item (CDNMedia) and voice metadata using CDN's x-encrypted-param when available
 CDN_MEDIA_JSON=$(python3 - <<PY
 import json
-media={'encrypt_query_param': '$UPLOAD_PARAM', 'aes_key': '$AES_KEY_B64'}
+media={'encrypt_query_param': '%s', 'aes_key': '%s'}
 print(json.dumps(media))
 PY
-)
+"$ENCRYPT_QUERY_PARAM" "$AES_KEY_B64")
+
+# create sanitized debug artifacts (redact sensitive values)
+SAN_GET="/tmp/weixin_getupload_sanitized_${TS}.json"
+python3 - <<PY > "$SAN_GET"
+import json,sys
+try:
+    d=json.loads('''$GETURL_RESP''')
+    if 'upload_param' in d:
+        d['upload_param']='<REDACTED>'
+    if 'thumb_upload_param' in d:
+        d['thumb_upload_param']='<REDACTED>'
+    print(json.dumps(d))
+except Exception as e:
+    print('{}')
+PY
+
+SAN_SEND="/tmp/weixin_sendmessage_sanitized_${TS}.json"
+python3 - <<PY > "$SAN_SEND"
+import json
+body={
+  'msg':{
+    'to_user_id':'%s',
+    'item_list':[{
+      'type':3,
+      'voice_item':{
+        'media':{
+          'encrypt_query_param':'<REDACTED>' ,
+          'aes_key':'<REDACTED>'
+        },
+        'encode_type':6,
+        'sample_rate':16000,
+        'playtime': %s
+      }
+    }]
+  }
+}
+print(json.dumps(body))
+PY
+"$TO_USER_ID" "$PLAY_MS"
 
 # Construct sendMessage body with voice metadata if playtime provided
 SENDBODY=$(python3 - <<PY
-import json,sys
+import json
 media=json.loads('''$CDN_MEDIA_JSON''')
 voice_item={'media': media}
 try:
@@ -150,7 +200,12 @@ SEND_RESP=$(curl -s -X POST "$BASEURL/ilink/bot/sendmessage" \
 
 # output minimal success/failure
 echo "getUploadUrl response: $(echo $GETURL_RESP | python3 -c 'import sys,json;d=json.load(sys.stdin);print(d.get("ret",""))')"
-echo "upload put response: $HTTP_RESP"
+echo "cdn upload http status: $HTTP_STATUS"
+echo "cdn headers file: $HDRFILE"
+echo "upload put response body: $(xxd -l 256 -p "$BODYFILE" 2>/dev/null || true)"
 echo "sendMessage response: $SEND_RESP"
+
+echo "sanitized_get: $SAN_GET"
+echo "sanitized_send: $SAN_SEND"
 
 exit 0
